@@ -573,6 +573,31 @@ fn configure_cc(c: &mut cc::Build, target: &Target, c_root_dir: &Path, include_d
         let _ = c.flag(f);
     }
 
+    if target.os == "horizon" {
+        let devkitarm = env::var("DEVKITARM").expect("$DEVKITARM is not set");
+        let devkitpro = env::var("DEVKITPRO").expect("$DEVKITPRO is not set");
+        let cc = Path::new(devkitarm.as_str()).join("bin/arm-none-eabi-gcc");
+        let ar = Path::new(devkitarm.as_str()).join("bin/arm-none-eabi-ar");
+        let arm_include = Path::new(devkitarm.as_str()).join("arm-none-eabi/include");
+        let libctru_include = Path::new(devkitpro.as_str()).join("libctru/include");
+        let portlibs_include = Path::new(devkitpro.as_str()).join("portlibs/3ds/include");
+
+        let _ = c
+            .target("armv6k-nintendo-3ds")
+            .compiler(cc)
+            .archiver(ar)
+            .include(arm_include)
+            .include(libctru_include)
+            .include(portlibs_include)
+            .flag("-march=armv6k")
+            .flag("-mtune=mpcore")
+            .flag("-mfloat-abi=hard")
+            .flag("-mfpu=vfp")
+            .flag("-mtp=soft")
+            .flag("-Wno-deprecated-declarations")
+            .flag("-finline-limit=100000");
+    }
+
     if APPLE_ABI.contains(&target.os.as_str()) {
         // ``-gfull`` is required for Darwin's |-dead_strip|.
         let _ = c.flag("-gfull");
